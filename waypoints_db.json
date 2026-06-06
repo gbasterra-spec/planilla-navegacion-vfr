@@ -35,11 +35,17 @@
         "lon": -58.4156,
         "frec": "119.4"
     },
+    "SADJ": {
+        "nombre": "Mariano Moreno",
+        "lat": -34.5589,
+        "lon": -58.79,
+        "frec": "119.7"
+    },
     "VOR_POBRES": {
         "nombre": "VOR de los Pobres",
         "lat": -35.1689,
         "lon": -58.2344,
-        "frec": "125.1"
+        "frec": "NA"
     },
     "PUENTE_HIERRO": {
         "nombre": "Puente de Hierro (R205)",
@@ -65,22 +71,22 @@
         "lon": -58.7194,
         "frec": "123.5"
     },
-    "SAZQ": {
-        "nombre": "Cañuelas",
-        "lat": -35.0111,
-        "lon": -58.7417,
+    "CNA": {
+        "nombre": "CNA",
+        "lat": -35.1119,
+        "lon": -58.72610,
         "frec": "123.5"
     },
-    "SADK": {
+    "MUS": {
         "nombre": "Chascomús",
-        "lat": -35.5661,
-        "lon": -58.0531,
-        "frec": "123.5"
+        "lat": -35.5426,
+        "lon": -58.0521,
+        "frec": "123.2"
     },
-    "SADQ": {
+    "SAZD": {
         "nombre": "Dolores",
-        "lat": -36.3214,
-        "lon": -57.7214,
+        "lat": -36.3198,
+        "lon": -57.7208,
         "frec": "123.5"
     },
     "DIQUE CASCALLARES": {
@@ -94,5 +100,42 @@
         "lat": -34.678778,
         "lon": -58.743056,
         "frec": "NA"
+    },
+    "LIBERTAD": {
+        "nombre": "Libertad",
+        "lat": -34.700289,
+        "lon": -58.683956,
+        "frec": "NA"
+    },
+    "I CASANOVA": {
+        "nombre": "Isidro Casanova",
+        "lat": -34.704694,
+        "lon": -58.587653,
+        "frec": "NA"
+    },
+      "JL SUAREZ": {
+        "nombre": "Jose Leon Suarez",
+        "lat": -34.534200,
+        "lon": -58.576500,
+        "frec": "NA"
+    },
+    "8 y MARQUEZ": {
+        "nombre": "8 y Marquez",
+        "lat": -34.562331,
+        "lon": -58.588006,
+        "frec": "NA"
+    },
+    "STA CATALINA": {
+        "nombre": "Santa Catalina",
+        "lat": -34.784517,
+        "lon": -58.434936,
+        "frec": "NA"
+    },
+    "SEN": {
+        "nombre": "Coronel Brandsen",
+        "lat": -35.18280,
+        "lon": -58.28390,
+        "frec": "NA"
     }
+
 }
