@@ -2,7 +2,8 @@ import streamlit as st
 import math
 from io import BytesIO
 import json
-import os  # <--- Para verificar si el archivo existe en el disco
+import os
+import pandas as pd  # <--- Agregamos pandas para manejar los datos del mapa fácilmente
 
 # --- IMPORTACIONES PARA REPORTLAB ---
 import reportlab.lib.pagesizes as pdf_sizes
@@ -32,7 +33,6 @@ AERODROMOS_INICIALES = {
     "SADQ": {"nombre": "Dolores", "lat": -36.3214, "lon": -57.7214, "frec": "123.5"}
 }
 
-# LÓGICA DE PERSISTENCIA: Cargar del archivo o crearlo si no existe
 if "aerodromos" not in st.session_state:
     if os.path.exists(DB_FILE):
         try:
@@ -41,7 +41,6 @@ if "aerodromos" not in st.session_state:
         except Exception:
             st.session_state.aerodromos = AERODROMOS_INICIALES.copy()
     else:
-        # Si no existe, creamos el archivo JSON por primera vez
         st.session_state.aerodromos = AERODROMOS_INICIALES.copy()
         with open(DB_FILE, "w", encoding="utf-8") as f:
             json.dump(AERODROMOS_INICIALES, f, indent=4, ensure_ascii=False)
@@ -81,63 +80,113 @@ def resolver_triangulo_vientos(mc, tas, dir_viento, vel_viento):
     gs = (tas * math.cos(wca_rad)) - (vel_viento * math.cos(angulo_viento))
     return round(wca, 0), round(gs, 1)
 
-def generar_pdf_a4_apaisado(tabla_datos, dist_t, tiempo_t, comb_t, avion, var, v_dir, v_vel):
+# NUEVA CONFIGURACIÓN: CAMBIO A FORMATO A5 PARA PERNERA (KNEEBOARD)
+def generar_pdf_a5_apaisado(tabla_datos, dist_t, tiempo_t, comb_t, avion, var, v_dir, v_vel):
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(pdf_sizes.A4), rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+    
+    # Tamaño A5 apaisado con márgenes optimizados de 20pt
+    doc = SimpleDocTemplate(
+        buffer, 
+        pagesize=landscape(pdf_sizes.A5), 
+        rightMargin=20, leftMargin=20, 
+        topMargin=20, bottomMargin=20
+    )
+    
     styles = getSampleStyleSheet()
-    title_style = ParagraphStyle('PdfTitle', parent=styles['Heading1'], fontSize=18, leading=22, textColor=colors.HexColor('#1E3A8A'), alignment=1, spaceAfter=12)
-    normal_style = ParagraphStyle('PdfNormal', parent=styles['Normal'], fontSize=9, leading=12, textColor=colors.black)
-    header_style = ParagraphStyle('PdfHeader', parent=styles['Normal'], fontSize=9, leading=11, textColor=colors.white, fontName='Helvetica-Bold', alignment=1)
-    cell_style = ParagraphStyle('PdfCell', parent=styles['Normal'], fontSize=8.5, leading=11, alignment=1)
+    title_style = ParagraphStyle('PdfTitle', parent=styles['Heading1'], fontSize=11, leading=13, textColor=colors.HexColor('#1E3A8A'), alignment=1, spaceAfter=4)
+    normal_style = ParagraphStyle('PdfNormal', parent=styles['Normal'], fontSize=7.5, leading=10, textColor=colors.black)
+    header_style = ParagraphStyle('PdfHeader', parent=styles['Normal'], fontSize=7.5, leading=9, textColor=colors.white, fontName='Helvetica-Bold', alignment=1)
+    cell_style = ParagraphStyle('PdfCell', parent=styles['Normal'], fontSize=7.5, leading=9, alignment=1)
+    frec_style = ParagraphStyle('PdfFrec', parent=styles['Normal'], fontSize=7, leading=9, textColor=colors.HexColor('#334155'))
     
     story = []
-    story.append(Paragraph("PLANILLA DE NAVEGACIÓN OPERATIVA - OPERACIONES VFR", title_style))
+    story.append(Paragraph("<b>PLANILLA DE NAVEGACIÓN VFR (KNEEBOARD A5)</b>", title_style))
     
+    # Bloque de Metadatos superior
     meta_data = [
-        [Paragraph(f"<b>Aeronave:</b> {avion}", normal_style), Paragraph(f"<b>Viento Seteado:</b> {v_dir}° / {v_vel} KT", normal_style)],
-        [Paragraph(f"<b>Declinación Magnética (VAR):</b> {var}°W", normal_style), Paragraph(f"<b>Unidades Combustible:</b> Litros (L / LPH)", normal_style)]
+        [Paragraph(f"<b>Avión:</b> {avion} | <b>VAR:</b> {var}°W", normal_style), 
+         Paragraph(f"<b>Viento:</b> {v_dir}° / {v_vel} KT | <b>Combustible:</b> Litros (L)", normal_style)]
     ]
-    meta_table = Table(meta_data, colWidths=[380, 380])
+    meta_table = Table(meta_data, colWidths=[270, 270])
     story.append(meta_table)
-    story.append(Spacer(1, 15))
+    story.append(Spacer(1, 4))
     
+    # Eliminamos la columna de frecuencias de la tabla principal
     headers = [
-        Paragraph("<b>Tramo</b>", header_style), Paragraph("<b>Ruta</b>", header_style), Paragraph("<b>Frecuencias</b>", header_style),
-        Paragraph("<b>Altitud</b>", header_style), Paragraph("<b>TC</b>", header_style), Paragraph("<b>MC</b>", header_style),
-        Paragraph("<b>WCA</b>", header_style), Paragraph("<b>MH</b>", header_style), Paragraph("<b>GS (KT)</b>", header_style),
-        Paragraph("<b>Dist. (NM)</b>", header_style), Paragraph("<b>Tiempo</b>", header_style), Paragraph("<b>Comb.</b>", header_style),
+        Paragraph("<b>Tramo</b>", header_style), Paragraph("<b>Ruta</b>", header_style),
+        Paragraph("<b>Alt</b>", header_style), Paragraph("<b>TC</b>", header_style), Paragraph("<b>MC</b>", header_style),
+        Paragraph("<b>WCA</b>", header_style), Paragraph("<b>MH</b>", header_style), Paragraph("<b>GS</b>", header_style),
+        Paragraph("<b>Dist</b>", header_style), Paragraph("<b>Min</b>", header_style), Paragraph("<b>Comb</b>", header_style),
     ]
     pdf_rows = [headers]
+    
+    # Recolectamos las frecuencias de los puntos usados de forma única para el final
+    frecuencias_utilizadas = {}
+    
     for row in tabla_datos:
         pdf_rows.append([
-            Paragraph(row["Tramo"], cell_style), Paragraph(row["Ruta"], cell_style), Paragraph(row["Frecuencias"], cell_style),
-            Paragraph(row["Altitud"], cell_style), Paragraph(row["True Course (TC)"], cell_style), Paragraph(row["Magnetic Course (MC)"], cell_style),
+            Paragraph(row["Tramo"], cell_style), Paragraph(row["Ruta"], cell_style),
+            Paragraph(row["Altitud"].replace(" FT", ""), cell_style), Paragraph(row["True Course (TC)"], cell_style), Paragraph(row["Magnetic Course (MC)"], cell_style),
             Paragraph(row["WCA"], cell_style), Paragraph(f"<b>{row['Magnetic Heading (MH)']}</b>", cell_style), Paragraph(row["GS (KT)"], cell_style),
-            Paragraph(row["Distancia (NM)"], cell_style), Paragraph(row["Tiempo"], cell_style), Paragraph(row["Combustible"], cell_style),
+            Paragraph(row["Distancia (NM)"], cell_style), Paragraph(row["Tiempo"].replace(" min", ""), cell_style), Paragraph(row["Combustible"].replace(" L", ""), cell_style),
         ])
-    total_style = ParagraphStyle('PdfTotal', parent=styles['Normal'], fontSize=9, fontName='Helvetica-Bold', alignment=1)
+        
+        # Parseamos el string de frecuencias del tramo para extraerlas limpias
+        # Ejemplo de formato original: "O: 118.5 / D: 123.4"
+        try:
+            partes_ruta = row["Ruta"].split(" ➔ ")
+            orig_id, dest_id = partes_ruta[0], partes_ruta[1]
+            partes_frec = row["Frecuencias"].split(" / ")
+            frec_o = partes_frec[0].replace("O:", "").strip()
+            frec_d = partes_frec[1].replace("D:", "").strip()
+            
+            frecuencias_utilizadas[orig_id] = frec_o
+            frecuencias_utilizadas[dest_id] = frec_d
+        except:
+            pass
+        
+    total_style = ParagraphStyle('PdfTotal', parent=styles['Normal'], fontSize=7.5, fontName='Helvetica-Bold', alignment=1)
     pdf_rows.append([
-        Paragraph("TOTAL", total_style), Paragraph("-", cell_style), Paragraph("-", cell_style), Paragraph("-", cell_style),
+        Paragraph("TOTAL", total_style), Paragraph("-", cell_style), Paragraph("-", cell_style),
         Paragraph("-", cell_style), Paragraph("-", cell_style), Paragraph("-", cell_style), Paragraph("-", cell_style), Paragraph("-", cell_style),
-        Paragraph(f"<b>{round(dist_t, 1)} NM</b>", total_style), Paragraph(f"<b>{tiempo_t} min</b>", total_style), Paragraph(f"<b>{round(comb_t, 1)} L</b>", total_style),
+        Paragraph(f"<b>{round(dist_t, 1)}</b>", total_style), Paragraph(f"<b>{tiempo_t}m</b>", total_style), Paragraph(f"<b>{round(comb_t, 1)}L</b>", total_style),
     ])
-    tabla_tramos = Table(pdf_rows, colWidths=[45, 95, 100, 55, 35, 35, 35, 40, 45, 55, 55, 65])
+    
+    # Nuevos anchos de columna distribuidos (Total 540 puntos utilizables en A5)
+    # Al sacar frecuencias, le dimos más aire a Ruta, Alt, Dist y Combustible
+    tabla_tramos = Table(pdf_rows, colWidths=[40, 115, 45, 34, 34, 34, 38, 36, 45, 44, 75])
     tabla_tramos.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#1E3A8A')), ('ALIGN', (0,0), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
         ('ROWBACKGROUNDS', (0,1), (-1,-2), [colors.white, colors.HexColor('#F8FAFC')]), ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor('#E2E8F0')),
-        ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 4), ('BOTTOMPADDING', (0,0), (-1,-1), 4),
     ]))
     story.append(tabla_tramos)
+    story.append(Spacer(1, 6))
+    
+    # BLOQUE INFERIOR DE FRECUENCIAS DE RADIO (Ordenado y compacto)
+    frec_items = [f"<b>{k}:</b> {v} MHz" for k, v in frecuencias_utilizadas.items()]
+    frec_texto = " | ".join(frec_items)
+    
+    frec_data = [[Paragraph(f"📞 <b>FRECUENCIAS DE LA RUTA:</b> {frec_texto}", frec_style)]]
+    tabla_frec = Table(frec_data, colWidths=[540])
+    tabla_frec.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F1F5F9')),
+        ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E1')),
+        ('PADDING', (0,0), (-1,-1), 4),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE')
+    ]))
+    story.append(tabla_frec)
+    
     doc.build(story)
     buffer.seek(0)
     return buffer
 
 # 5. CONFIGURACIÓN DE STREAMLIT
-st.set_page_config(page_title="Planilla de Navegación", page_icon="📋", layout="wide")
+st.set_page_config(page_title="Planilla de Navegación A5", page_icon="📋", layout="wide")
 
-st.title("📋 Planilla de Navegación Operativa (Cálculo Magnético)")
-st.write("Planilla corregida por Declinación Magnética e Intensidad de Viento manual para operaciones de vuelo.")
+st.title("📋 Planilla de Navegación Operativa (Kneeboard A5)")
+st.write("Planilla de vuelo compactada para formato pernera con previsualización de ruta en mapa.")
 st.markdown("---")
 
 lista_oaci = list(AERODROMOS.keys())
@@ -162,6 +211,106 @@ var_mag = st.sidebar.slider("Variación/Declinación (°W)", 0, 20, 8, step=1)
 st.sidebar.subheader("💨 Datos del Viento")
 dir_viento = st.sidebar.slider("Dirección del Viento (°)", 0, 360, 0, step=10)
 vel_viento = st.sidebar.slider("Intensidad (KT)", 0, 40, 0, step=1)
+
+# --- MAPA INTERACTIVO DE CONTROL EN EL SIDEBAR ---
+# --- MAPA INTERACTIVO DE CONTROL EN EL SIDEBAR (CON LÍNEAS DE RUTA) ---
+# --- MAPA INTERACTIVO DE CONTROL EN EL SIDEBAR (CON LÍNEAS DE RUTA) ---
+# --- MAPA INTERACTIVO DE CONTROL EN EL SIDEBAR (LEAFLET.JS AUTOMÁTICO) ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("🗺️ Mapa de Ruta Seleccionada")
+
+import streamlit.components.v1 as components
+
+coordenadas_ruta = []
+map_markers_js = ""
+line_coords_js = []
+
+# Procesamos los puntos de la ruta activa
+for idx, p_id in enumerate(st.session_state.ruta):
+    if p_id in AERODROMOS:
+        lat = AERODROMOS[p_id]["lat"]
+        lon = AERODROMOS[p_id]["lon"]
+        nombre = f"{p_id} - {AERODROMOS[p_id]['nombre']}"
+        coordenadas_ruta.append([lat, lon])
+        
+        # Color diferenciado: Verde el origen de la pierna inicial, Rojo el resto
+        color_pin = "#10B981" if idx == 0 else "#EF4444"
+        
+        # Inyectamos código JavaScript para cada marcador
+        map_markers_js += f"""
+        L.circleMarker([{lat}, {lon}], {{
+            radius: 6,
+            fillColor: '{color_pin}',
+            color: '#FFFFFF',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.9
+        }}).addTo(map).bindPopup('<b>{nombre}</b>');
+        """
+        line_coords_js.append(f"[{lat}, {lon}]")
+
+if coordenadas_ruta:
+    # Determinamos el centro del mapa en base al primer punto
+    lat_c, lon_c = coordenadas_ruta[0][0], coordenadas_ruta[0][1]
+    lines_array_js = f"[{', '.join(line_coords_js)}]" if len(line_coords_js) > 1 else "[]"
+    
+    # Construimos el mapa HTML/JS embebido usando Leaflet con un mapa base claro (OpenStreetMap)
+    html_map_code = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+            html, body, #map {{ height: 100%; margin: 0; padding: 0; background-color: #F8FAFC; }}
+            .leaflet-container {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }}
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <script>
+            // Inicializar mapa centrado en el origen de la ruta
+            var map = L.map('map', {{
+                center: [{lat_c}, {lon_c}],
+                zoom: 8,
+                zoomControl: false,
+                attributionControl: false
+            }});
+            
+            // Cargar mapa base claro ideal para navegación visual VFR
+            L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
+                maxZoom: 18
+            }}).addTo(map);
+            
+            // Agregar los marcadores de los aeródromos
+            {map_markers_js}
+            
+            // Dibujar la línea de ruta si hay más de un punto seleccionado
+            var lineCoords = {lines_array_js};
+            if (lineCoords.length > 1) {{
+                var polyline = L.polyline(lineCoords, {{
+                    color: '#1D4ED8',
+                    weight: 3,
+                    opacity: 0.85,
+                    dashArray: '5, 5' // Línea de trazos estilo ruta aeronáutica
+                }}).addTo(map);
+                
+                // Ajustar el zoom automáticamente para que quepa toda la ruta en pantalla
+                map.fitBounds(polyline.getBounds(), {{ padding: [20, 20] }});
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    
+    # Renderizar el componente HTML de manera nativa en el sidebar (Altura fija de 250px)
+    components.html(html_map_code, height=250)
+    
+    # Eje de ruta en texto abajo del mapa para control
+    trayecto_texto = " ➔ ".join(st.session_state.ruta)
+    st.sidebar.caption(f"**Eje de Ruta:** {trayecto_texto}")
+
+st.sidebar.markdown("---")
 
 # --- BOTÓN GENERAL PARA AÑADIR TRAMO ---
 if st.button("➕ Añadir Tramo al Final") and len(st.session_state.ruta) < 11:
@@ -252,9 +401,9 @@ else:
             total_combustible += comb_tramo
             
             tabla_navegacion.append({
-                "Tramo": f"Pierna {i+1}",
+                "Tramo": f"P{i+1}",
                 "Ruta": f"{origen_sel} ➔ {destino_sel}",
-                "Frecuencias": f"O: {p_orig['frec']} / D: {p_dest['frec']}",
+                "Frecuencias": f"O:{p_orig['frec']} / D:{p_dest['frec']}",
                 "Altitud": f"{altitud_sel} FT",
                 "True Course (TC)": f"{tc}°",
                 "Magnetic Course (MC)": f"{mc}°",
@@ -289,14 +438,16 @@ else:
         st.table(tabla_navegacion)
         
         st.markdown("### 📄 Exportar Documento de Vuelo")
-        pdf_data = generar_pdf_a4_apaisado(
+        
+        # LLAMADA A LA NUEVA FUNCIÓN EN FORMATO A5
+        pdf_data = generar_pdf_a5_apaisado(
             tabla_navegacion, total_distancia, total_tiempo, total_combustible, 
             avión_sel, var_mag, dir_viento, vel_viento
         )
         
         st.download_button(
-            label="📥 Descargar Planilla de Navegación en PDF (A4)",
+            label="📥 Descargar Planilla de Navegación en PDF (Formato Pernera A5)",
             data=pdf_data,
-            file_name="Planilla_Navegacion_VFR.pdf",
+            file_name="Planilla_VFR_Kneeboard_A5.pdf",
             mime="application/pdf"
         )
