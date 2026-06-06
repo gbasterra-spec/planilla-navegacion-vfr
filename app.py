@@ -15,35 +15,20 @@ from reportlab.lib.pagesizes import landscape
 # RUTA DEL ARCHIVO DE BASE DE DATOS LOCAL
 DB_FILE = "waypoints_db.json"
 
-AERODROMOS_INICIALES = {
-    "SADM": {"nombre": "Morón", "lat": -34.6761, "lon": -58.6436, "frec": "118.5"},
-    "SAEZ": {"nombre": "Ezeiza Intl", "lat": -34.8222, "lon": -58.5358, "frec": "118.6"},
-    "SADZ": {"nombre": "Matanza", "lat": -34.7292, "lon": -58.6017, "frec": "123.4"},
-    "SADF": {"nombre": "San Fernando", "lat": -34.4514, "lon": -58.5894, "frec": "120.4"},
-    "SADP": {"nombre": "El Palomar", "lat": -34.6097, "lon": -58.6047, "frec": "119.9"},
-    "SABE": {"nombre": "Aeroparque", "lat": -34.5589, "lon": -58.4156, "frec": "119.4"},
-    "LA_PLATA": {"nombre": "La Plata", "lat": -34.9722, "lon": -57.8944, "frec": "118.9"},
-    "VOR_POBRES": {"nombre": "VOR de los Pobres (Brandsen)", "lat": -35.1689, "lon": -58.2344, "frec": "125.1"},
-    "PUENTE_HIERRO": {"nombre": "Puente de Hierro (R205)", "lat": -35.6514, "lon": -59.5647, "frec": "123.5"},
-    "LONGCHAMPS": {"nombre": "Punto Longchamps (Pasaje)", "lat": -34.8436, "lon": -58.3858, "frec": "125.1"},
-    "SAN_VICENTE": {"nombre": "Punto San Vicente", "lat": -35.0253, "lon": -58.4231, "frec": "125.1"},
-    "ROTONDA_CAÑUELAS": {"nombre": "Cruce Rutas 3 y 205", "lat": -35.0564, "lon": -58.7194, "frec": "123.5"},
-    "SAZQ": {"nombre": "Cañuelas", "lat": -35.0111, "lon": -58.7417, "frec": "123.5"},
-    "SADK": {"nombre": "Chascomús", "lat": -35.5661, "lon": -58.0531, "frec": "123.5"},
-    "SADQ": {"nombre": "Dolores", "lat": -36.3214, "lon": -57.7214, "frec": "123.5"}
-}
-
+# LÓGICA DE PERSISTENCIA ULTRA-ROBUSTA:
+# Forzamos a la aplicación a leer ÚNICAMENTE el archivo físico JSON de GitHub.
 if "aerodromos" not in st.session_state:
     if os.path.exists(DB_FILE):
         try:
             with open(DB_FILE, "r", encoding="utf-8") as f:
                 st.session_state.aerodromos = json.load(f)
-        except Exception:
-            st.session_state.aerodromos = AERODROMOS_INICIALES.copy()
+        except Exception as e:
+            st.error(f"❌ Error crítico al leer el archivo de base de datos JSON: {e}")
+            st.stop()  # Detiene la ejecución para no operar con datos corruptos o vacíos
     else:
-        st.session_state.aerodromos = AERODROMOS_INICIALES.copy()
-        with open(DB_FILE, "w", encoding="utf-8") as f:
-            json.dump(AERODROMOS_INICIALES, f, indent=4, ensure_ascii=False)
+        # Alerta en pantalla si el archivo falta en el despliegue de GitHub
+        st.error(f"❌ No se encontró el archivo '{DB_FILE}' en el repositorio de GitHub. Asegúrate de haberlo subido.")
+        st.stop()
 
 AERODROMOS = st.session_state.aerodromos
 
