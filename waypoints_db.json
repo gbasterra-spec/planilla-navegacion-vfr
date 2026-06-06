@@ -130,6 +130,12 @@
         "lat": -35.18280,
         "lon": -58.28390,
         "frec": "NA"
+    },
+    "MGI": {  
+        "nombre": "Martin Garcia",
+        "lat": -34.18210,
+        "lon": -58.24690,
+        "frec": "NA"
     }
 
 }
