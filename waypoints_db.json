@@ -35,22 +35,16 @@
         "lon": -58.4156,
         "frec": "119.4"
     },
-    "LA_PLATA": {
-        "nombre": "La Plata",
-        "lat": -34.9722,
-        "lon": -57.8944,
-        "frec": "118.9"
-    },
     "VOR_POBRES": {
-        "nombre": "VOR de los Pobres (Brandsen)",
+        "nombre": "VOR de los Pobres",
         "lat": -35.1689,
         "lon": -58.2344,
         "frec": "125.1"
     },
     "PUENTE_HIERRO": {
         "nombre": "Puente de Hierro (R205)",
-        "lat": -35.6514,
-        "lon": -59.5647,
+        "lat": -34.740317,
+        "lon": -58.803389,
         "frec": "123.5"
     },
     "LONGCHAMPS": {
@@ -88,5 +82,17 @@
         "lat": -36.3214,
         "lon": -57.7214,
         "frec": "123.5"
+    }
+    "DIQUE CASCALLARES": {
+        "nombre": "Dique Cascallares",
+        "lat": -34.684986,
+        "lon": -58.870386,
+        "frec": "NA"
+    }
+    "GIVA": {
+        "nombre": "GIVA",
+        "lat": -34.678778,
+        "lon": -58.743056,
+        "frec": "NA"
     }
 }
