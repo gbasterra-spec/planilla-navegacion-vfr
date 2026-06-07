@@ -55,15 +55,31 @@ def calcular_distancia_y_rumbo(lat1, lon1, lat2, lon2):
 def resolver_triangulo_vientos(mc, tas, dir_viento, vel_viento):
     if vel_viento == 0:
         return 0.0, tas
+        
     mc_rad = math.radians(mc)
     dir_v_rad = math.radians(dir_viento)
+    
+    # Ángulo entre el curso y de dónde viene el viento
     angulo_viento = dir_v_rad - mc_rad
-    val_sin = (vel_viento * math.sin(angulo_viento)) / tas
-    val_sin = max(-1.0, min(1.0, val_sin))
-    wca_rad = math.asin(val_sin)
+    
+    # 1. Componente de viento de frente (Headwind)
+    headwind = vel_viento * math.cos(angulo_viento)
+    
+    # 2. Componente de viento cruzado (Crosswind)
+    crosswind = vel_viento * math.sin(angulo_viento)
+    
+    # Validar si el viento cruzado supera la velocidad del avión (Imposible volar)
+    if abs(crosswind) >= tas:
+        return 0.0, 0.0
+        
+    # 3. Cálculo exacto del WCA
+    wca_rad = math.asin(crosswind / tas)
     wca = math.degrees(wca_rad)
-    gs = (tas * math.cos(wca_rad)) - (vel_viento * math.cos(angulo_viento))
-    return round(wca, 0), round(gs, 1)
+    
+    # 4. Cálculo de GS usando Pitágoras/Trigonometría pura sin deformación
+    gs = math.sqrt(tas**2 - crosswind**2) - headwind
+    
+    return round(wca, 0), round(max(0.0, gs), 1)
 
 # NUEVA CONFIGURACIÓN: CAMBIO A FORMATO A5 PARA PERNERA (KNEEBOARD)
 def generar_pdf_a5_apaisado(tabla_datos, dist_t, tiempo_t, comb_t, avion, var, v_dir, v_vel):
@@ -172,6 +188,7 @@ st.set_page_config(page_title="Planilla de Navegación A5", page_icon="📋", la
 
 st.title("📋 Planilla de Navegación Operativa (Kneeboard A5)")
 st.write("Planilla de vuelo compactada para formato pernera con previsualización de ruta en mapa.")
+st.write("Desarrollada por Gabriel Basterra y Gemini")
 st.markdown("---")
 
 lista_oaci = list(AERODROMOS.keys())
