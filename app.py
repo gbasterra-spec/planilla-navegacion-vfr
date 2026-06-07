@@ -199,7 +199,7 @@ p_dest_def = lista_oaci[1] if len(lista_oaci) > 1 else p_ini
 if "ruta" not in st.session_state or not all(p in lista_oaci for p in st.session_state.ruta):
     st.session_state.ruta = [p_ini, p_dest_def]
 if "altitudes" not in st.session_state:
-    st.session_state.altitudes = [2500]
+    st.session_state.altitudes = [1000]
 
 # --- SIDEBAR DE CONFIGURACIÓN GENERAL ---
 st.sidebar.header("⚙️ Configuración General")
@@ -317,7 +317,7 @@ st.sidebar.markdown("---")
 # --- BOTÓN GENERAL PARA AÑADIR TRAMO ---
 if st.button("➕ Añadir Tramo al Final") and len(st.session_state.ruta) < 11:
     st.session_state.ruta.append(lista_oaci[0] if lista_oaci else "")
-    st.session_state.altitudes.append(2500)
+    st.session_state.altitudes.append(1000)
     st.rerun()
 
 st.write("")
