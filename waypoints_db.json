@@ -41,6 +41,18 @@
         "lon": -58.79,
         "frec": "119.7"
     },
+    "SAZI - BLR": {
+        "nombre": "Bolivar",
+        "lat": -36.1863,
+        "lon": -61.0761,
+        "frec": "123.5"
+    },
+    "SAAJ - NIN": {
+        "nombre": "Junin",
+        "lat": -34.5458,
+        "lon": -60.9305,
+        "frec": "118.8"
+    },
     "VOR_POBRES": {
         "nombre": "VOR de los Pobres",
         "lat": -35.1689,
