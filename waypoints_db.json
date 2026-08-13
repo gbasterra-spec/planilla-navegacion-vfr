@@ -53,6 +53,24 @@
         "lon": -60.9305,
         "frec": "118.8"
     },
+       "SAZM - MDQ": {
+        "nombre": "Mar del Plata",
+        "lat": -37.9342,
+        "lon": -57.5733,
+        "frec": "118.75"
+    },
+         "SAZT - TDL": {
+        "nombre": "Tandil",
+        "lat": -37.2344,
+        "lon": -59.2286,
+        "frec": "120.9"
+    },
+     "SAZB - BHI": {
+        "nombre": "Bahia Blanca",
+        "lat": -38.7203,
+        "lon": -62.1575,
+        "frec": "119.15"
+    },
     "VOR_POBRES": {
         "nombre": "VOR de los Pobres",
         "lat": -35.1689,
