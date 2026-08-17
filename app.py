@@ -34,7 +34,7 @@ AERODROMOS = st.session_state.aerodromos
 
 AVIONES = {
     "Cessna 150": {"tas": 70, "lph": 21.0},
-    "Cessna 152": {"tas": 99, "lph": 23.0},
+    "Cessna 152": {"tas": 90, "lph": 23.0},
     "Cessna 172": {"tas": 110, "lph": 32.0},
     "Piper Archer": {"tas": 120, "lph": 34.0}
 }
