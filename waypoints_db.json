@@ -166,6 +166,18 @@
         "lat": -34.18210,
         "lon": -58.24690,
         "frec": "122.5"
+    },
+        "Zeballos": {  
+        "nombre": "Zeballos",
+        "lat": -34.81139,
+        "lon": -58.25750,
+        "frec": "NA"
+    },
+        "Rot Gut": {  
+        "nombre": "Rotonda Gutierrez",
+        "lat": -34.84361,
+        "lon": -58.18750,
+        "frec": "NA"
     }
 
 }
