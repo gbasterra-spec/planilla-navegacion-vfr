@@ -71,6 +71,12 @@
         "lon": -62.1575,
         "frec": "119.15"
     },
+     "SRDL - LJN": {
+        "nombre": "Lujan",
+        "lat": -34.550794,
+        "lon": -59.078212,
+        "frec": "123.65"
+    },
     "VOR_POBRES": {
         "nombre": "VOR de los Pobres",
         "lat": -35.1689,
