@@ -253,8 +253,8 @@ if coordenadas_ruta:
                 attributionControl: false
             }});
             
-            // Usamos OpenStreetMap: 100% libre y sin API Key
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {{
+            // Usamos OpenStreetMap con llaves dobles ({{s}}, {{z}}, {{x}}, {{y}})
+            L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
                 maxZoom: 18,
                 attribution: '&copy; OpenStreetMap contributors'
             }}).addTo(map);
