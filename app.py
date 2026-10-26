@@ -253,8 +253,10 @@ if coordenadas_ruta:
                 attributionControl: false
             }});
             
-            L.tileLayer('https://{{s}}.basemaps.cartocdn.com/light_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
-                maxZoom: 18
+            // Usamos OpenStreetMap: 100% libre y sin API Key
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {{
+                maxZoom: 18,
+                attribution: '&copy; OpenStreetMap contributors'
             }}).addTo(map);
             
             {map_markers_js}
